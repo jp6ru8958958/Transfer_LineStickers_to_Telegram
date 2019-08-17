@@ -1,7 +1,7 @@
 const TeleBot = require('telebot');
 
 
-const token = '978232433:AAEH2TzR6z9OkmmUnsM5McagdeOfcA8CkVc';
+const token = 'token';
 const bot = new TeleBot(token);
 
 bot.on('text', (msg) => {
