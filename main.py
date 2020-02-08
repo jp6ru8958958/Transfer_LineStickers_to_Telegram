@@ -36,4 +36,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
-# dl.stickershop.line.naver.jp/products/0/0/1/8751482/iphone/stickers@2x.zip
+
