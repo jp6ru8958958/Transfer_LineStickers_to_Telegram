@@ -2,6 +2,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import json
 import urllib.request
+import zipfile
 
 def start(update, context):
 	print(update.effective_chat.username)
@@ -12,7 +13,7 @@ def echo(update, context):
 		Stickers_ID = update.message.text[42::]
 		Stickers_ID = ''.join(list(filter(str.isdigit, Stickers_ID)))
 		print(Stickers_ID)
-		if(downloader(update, Stickers_ID)):
+		if(downloader(Stickers_ID)):
 			context.bot.send_message(chat_id=update.effective_chat.id, text="Download "+Stickers_ID+" Success!\nJust wait minute for upload to telegram!")
 			image_transcoding()
 		else:
@@ -20,7 +21,7 @@ def echo(update, context):
 	else:
 		context.bot.send_message(chat_id=update.effective_chat.id, text="Wrong input content!\nPlease give me the sticker's store link.\nExample: https://store.line.me/stickershop/product/00001/zh-Hant")
 
-def downloader(update, Stickers_ID):
+def downloader(Stickers_ID):
 	dl_pkg_link = "http://dl.stickershop.line.naver.jp/products/0/0/1/"+Stickers_ID+"/iphone/stickers@2x.zip"
 	try:
 		dl_file = urllib.request.urlopen(dl_pkg_link)
@@ -33,8 +34,11 @@ def downloader(update, Stickers_ID):
 		return False
 	
 def image_transcoding():
-
-
+	with zipfile.ZipFile('Stickers.zip', 'r') as zFile:
+		for fileM in zFile.namelist():
+			zFile.extract(fileM, 'Stickers')
+		zFile.close()
+	
 
 def main():
 	TOKEN = json.load(open('..//..//Api_Token.json', 'r'))
