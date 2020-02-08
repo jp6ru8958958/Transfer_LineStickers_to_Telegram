@@ -1,6 +1,7 @@
 Stickers.zip
 Stickers/
 test.py
+__pycache__/
 
 # Logs
 logs
