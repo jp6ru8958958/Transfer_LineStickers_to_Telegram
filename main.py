@@ -13,100 +13,129 @@ from emoji import emojize
 import shutil
 
 
-def start(update, context):
-	print(update.effective_chat.username)
-	context.bot.send_message(chat_id=update.effective_chat.id, text='Just give me the sticker\'s store link!\nExample: https://store.line.me/stickershop/product/8751482/zh-Hant')
+class bot():
+    def start(update, context):
+        print('{{/start}}:({username})'.format(username=update.effective_chat.username))
+        context.bot.send_message(chat_id=update.effective_chat.id, text='Just give me the sticker\'s store link!\nExample: https://store.line.me/stickershop/product/8751482/zh-Hant')
 
-def echo(update, context):
-	if(update.message.text[0:42] == 'https://store.line.me/stickershop/product/'):
-		Stickers_ID = update.message.text[42::]
-		Stickers_ID = ''.join(list(filter(str.isdigit, Stickers_ID)))
-		print(Stickers_ID)
-		if(downloader(Stickers_ID)):
-			context.bot.send_message(chat_id=update.effective_chat.id, text='Download '+Stickers_ID+' Success!\nJust wait minute for upload to telegram!')
-			image_transcoding()
-			upload_to_telegram(update, context)
-		else:
-			print('Download error.')
-			context.bot.send_message(chat_id=update.effective_chat.id, text='Something error!\nPlease try other sticker link.')
-	else:
-		context.bot.send_message(chat_id=update.effective_chat.id, text='Wrong input content!\nPlease give me the sticker\'s store link.\nExample: https://store.line.me/stickershop/product/00001/zh-Hant')
+    def echo(update, context):
+        print('{{/echo}}:({username}):{text}'.format(username=update.effective_chat.username, text=update.message.text))
+        if update.message.text[0:42] == 'https://store.line.me/stickershop/product/':
+            Sticker_set = sticker_set_process(update, context)
+            Sticker_set.ID = update.message.text[42::]
+            Sticker_set.ID = ''.join(list(filter(str.isdigit, Sticker_set.ID)))
+            print(Sticker_set.ID)
+            Sticker_set.get_sticker_set()
+            Sticker_set.image_transcoding()
+            Sticker_set.upload_to_telegram()
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text='Wrong input content!\nPlease give me the sticker\'s store link.\nExample: https://store.line.me/stickershop/product/00001/zh-Hant')
 
-def downloader(Stickers_ID):
-	dl_pkg_link = 'http://dl.stickershop.line.naver.jp/products/0/0/1/'+Stickers_ID+'/iphone/stickers@2x.zip'
-	try:
-		dl_file = urllib.request.urlopen(dl_pkg_link)
-		with open('Stickers.zip', 'wb') as ZipFile:
-			ZipFile.write(dl_file.read())
-			print(Stickers_ID+' download finish.')
-			return True
-	except:
-		return False
-	
-def image_transcoding():
-	with zipfile.ZipFile('Stickers.zip', 'r') as zFile:
-		for fileM in zFile.namelist():
-			zFile.extract(fileM, 'Stickers')
-		zFile.close()
-	img_files = listdir('Stickers')
-	amount = 0
-	for img_name in img_files:
-		if 'key' not in img_name and 'tab' not in img_name and 'pro' not in img_name:
-			amount += 1		
-			image = cv2.imread('Stickers/'+img_name, cv2.IMREAD_UNCHANGED)
-			if image.shape[0]>=image.shape[1]:
-				mag = 512/image.shape[0]
-				src = cv2.resize(image, ( int(image.shape[1]*mag), 512), interpolation=cv2.INTER_CUBIC)
-				src[ 63, 63, :] = [ 255, 0, 0, 128]
-				cv2.imwrite('image'+str(amount)+'.png', src, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-			else:
-				mag = 512/image.shape[1]
-				src = cv2.resize(image, ( 512, int(image.shape[0]*mag)), interpolation=cv2.INTER_CUBIC)
-				src[ 63, 63, :] = [ 255, 0, 0, 128]
-				cv2.imwrite('image'+str(amount)+'.png', src, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
-			print(img_name+' finish resize ', amount)
-	print('All image resize finish!')
+class sticker_set_process():
+    def __init__(self, update, context):
+        self.ID = ''
+        self.update = update
+        self.context = context
 
-def upload_to_telegram(update, context):
-	sticker_info = json.load(open(f'Stickers//productInfo.meta'))
-	eng_name = sticker_info['title']['en']
-	stk_id = sticker_info['packageId']
-	if 'zh-Hant' in sticker_info['title']:
-		tw_name = sticker_info['title']['zh-Hant']
-	else:
-		tw_name = eng_name
-	sticker_name = 'id'+str(stk_id)+'_by_TLStT_bot'
-	emoj = emoji.emojize(':smile:', use_aliases=True)
-	print(update.message.from_user.id, sticker_name, tw_name, eng_name)
-	amount = 0
-	img_file = listdir()
-	for png_sticker in img_file:
-		if '.png' in png_sticker:
-			amount+=1
-			try:
-				context.bot.addStickerToSet( update.message.from_user.id, sticker_name, open(f''+png_sticker, 'rb'), emoj)
-			except telegram.error.BadRequest:
-				context.bot.createNewStickerSet( update.message.from_user.id, sticker_name, eng_name, open( f''+png_sticker, 'rb'), emoj)
-			os.remove(png_sticker)
-			print('upload '+sticker_name+' success. ', amount)
-	shutil.rmtree('Stickers')
-	os.remove('Stickers.zip')
-	print('finish!\nhttps://t.me/addstickers/'+sticker_name)
-	context.bot.send_message(chat_id=update.effective_chat.id, text='https://t.me/addstickers/'+sticker_name)
+    def get_sticker_set(self):
+        # Get line sticker set from request.
+        print('downloading'+self.ID)
+        dl_pkg_link = 'http://dl.stickershop.line.naver.jp/products/0/0/1/'+self.ID+'/iphone/stickers@2x.zip'
+        try:
+            dl_file = urllib.request.urlopen(dl_pkg_link)
+            with open('Stickers.zip', 'wb') as ZipFile:
+                ZipFile.write(dl_file.read())
+                print(self.ID+' download finish.')
+                self.context.bot.send_message(chat_id=self.update.effective_chat.id, text='Download '+Sticker_set.ID+' Success!\nJust wait minute for upload to telegram!')
+                return True
+        except:
+            return False
+        
+    def image_transcoding(self):
+        # Transcoding line's sticker as telegram's spcification.
+        with zipfile.ZipFile('Stickers.zip', 'r') as zFile:
+        # Extract zip file.
+            for fileM in zFile.namelist():
+                zFile.extract(fileM, 'Stickers')
+            zFile.close()
+        img_files = listdir('Stickers')
+        amount = 0
+        for img_name in img_files:
+        # Image resize.
+            print(img_name)
+            if 'key' not in img_name and 'tab' not in img_name and 'pro' not in img_name:
+            # Ignore "productInfo.meta" "tab_on/off@2x.png" "KEY image"
+                amount+=1
+                image = cv2.imread('Stickers/'+img_name, cv2.IMREAD_UNCHANGED)
+                if image.shape[0]>=image.shape[1]:
+                    mag = 512/image.shape[0]
+                    src = cv2.resize(image, (int(image.shape[1]*mag), 512), interpolation=cv2.INTER_CUBIC)
+                    src[63, 63, :] = [255, 0, 0, 128]
+                    cv2.imwrite('image'+str(amount)+'.png', src, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                else:
+                    mag = 512/image.shape[1]
+                    src = cv2.resize(image, (512, int(image.shape[0]*mag)), interpolation=cv2.INTER_CUBIC)
+                    src[63, 63, :] = [255, 0, 0, 128]
+                    cv2.imwrite('image'+str(amount)+'.png', src, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+                print(img_name+' finish resize ', amount)
+        print('All image resize finish!')
+        
+    def upload_to_telegram(self):
+        sticker_info = json.load(open('Stickers//productInfo.meta'))
+        self.eng_name = sticker_info['title']['en']
+        if 'zh-Hant' in sticker_info['title']:
+            self.tw_name = sticker_info['title']['zh-Hant']
+        else:
+            self.tw_name = self.eng_name
+        self.tg_sticker_set_name = 'id_'+str(self.ID)+'_by_TLStT_bot'
+        emj = emoji.emojize(':smile:', use_aliases=True)
+        # Get an emoji for upload need.
+        print(self.update.message.from_user.id, self.tg_sticker_set_name, self.tw_name, self.eng_name)
+        amount = 0
+        img_file = listdir()
+        for png_sticker in img_file:
+            if '.png' in png_sticker:
+                amount+=1
+                try:
+                    self.context.bot.addStickerToSet(self.update.message.from_user.id, self.tg_sticker_set_name, emj, open(''+png_sticker, 'rb'))
+                except telegram.error.BadRequest:
+                    self.context.bot.createNewStickerSet(self.update.message.from_user.id, self.tg_sticker_set_name, self.eng_name, emj, open(''+png_sticker, 'rb'))
+                os.remove(png_sticker)
+                print('upload '+self.tg_sticker_set_name+' success. ', amount)
+        shutil.rmtree('Stickers')
+        os.remove('Stickers.zip')
+        print('finish!\nhttps://t.me/addstickers/'+self.tg_sticker_set_name)
+        self.context.bot.send_message(chat_id=self.update.effective_chat.id, text=self.tw_name+'\nhttps://t.me/addstickers/'+self.tg_sticker_set_name)
+    
+    def record_converted_stickers(self):
+        jsonFile = open('converted_stickers.json', 'r')
+        data = json.loads(jsonFile.read())
+        data.update({self.ID:self.tw_name})
+        jsonFile = open('converted_stickers.json', 'w')
+        json.dump(data, jsonFile)
+        jsonFile.close()
+    
+    def checkExist(self):
+        return 0
+
+def reset_env():
 
 
-def main():
-	TOKEN = json.load(open('..//..//Api_Token.json', 'r'))
-	updater = Updater(token=TOKEN['Telegram']['Transfer_LineStickers_to_Telegram'], use_context=True)
-	dispatcher = updater.dispatcher
-	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)		
-	start_handler = CommandHandler('start', start)
-	echo_handler = MessageHandler(Filters.text, echo)
-	dispatcher.add_handler(start_handler)
-	dispatcher.add_handler(echo_handler)
-	updater.start_polling()
-	
 
-if __name__ == "__main__":
-	main()
+    pass
+
+def bot_setting():
+    TOKEN = json.load(open('..//..//Api_Token.json', 'r'))
+    updater = Updater(token=TOKEN['Telegram']['Transfer_LineStickers_to_Telegram'], use_context=True)
+    dispatcher = updater.dispatcher
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+    start_handler = CommandHandler('start', bot.start)
+    echo_handler = MessageHandler(Filters.text, bot.echo)
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(echo_handler)
+    updater.start_polling()
+
+
+if __name__=="__main__":
+    bot_setting()
 
