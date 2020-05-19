@@ -26,9 +26,13 @@ class bot():
             Sticker_set.ID = updater.message.text[42::]
             Sticker_set.ID = ''.join(list(filter(str.isdigit, Sticker_set.ID)))
             print(Sticker_set.ID)
-            Sticker_set.get_sticker_set()
-            Sticker_set.image_transcoding()
-            Sticker_set.upload_to_telegram()
+            if Sticker_set.checkExist():
+                pass
+            else:
+                Sticker_set.get_sticker_set()
+                Sticker_set.image_transcoding()
+                Sticker_set.upload_to_telegram()
+                Sticker_set.record_converted_stickers()
         else:
             context.bot.send_message(
                 chat_id = updater.effective_chat.id, 
@@ -133,7 +137,16 @@ class sticker_set_process():
         jsonFile.close()
     
     def checkExist(self):
-        return 0
+        jsonFile = json.load(open('converted_stickers.json'))
+        if self.ID in jsonFile:
+            self.tg_sticker_link = jsonFile[self.ID]+'\nhttps://t.me/addstickers/id_'+str(self.ID)+'_by_TLStT_bot'
+            self.context.bot.send_message(
+                chat_id=self.updater.effective_chat.id, 
+                text=self.tg_sticker_link,)
+            return True
+        else:
+            return False
+        
 
 
 def commands(dispatcher, updater):
