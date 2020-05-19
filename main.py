@@ -17,7 +17,7 @@ class bot():
         print('{{/start}}:({username})'.format(username=updater.effective_chat.username))
         context.bot.send_message(
             chat_id=updater.effective_chat.id,
-            text='Just give me the sticker\'s store link!\nExample: https://store.line.me/stickershop/product/8751482/zh-Hant')
+            text='Just give me the sticker\'s store link!\nExample: https://store.line.me/stickershop/product/0000001/zh-Hant')
 
     def echo(updater, context):
         print('{{/echo}}:({username}):{text}'.format(username=updater.effective_chat.username, text=updater.message.text))
@@ -97,7 +97,7 @@ class sticker_set_process():
             self.tw_name = sticker_info['title']['zh-Hant']
         else:
             self.tw_name = self.eng_name
-        self.tg_sticker_set_name = 'id_'+str(self.ID)+'_by_TLStT_bot'
+        self.tg_sticker_set_name = 'id'+str(self.ID)+'_by_TLStT_bot'
         default_emj = emoji.emojize(':smile:', use_aliases=True)
         # Get an emoji for upload need.
         print(self.updater.message.from_user.id, self.tg_sticker_set_name, self.tw_name, self.eng_name)
@@ -139,7 +139,7 @@ class sticker_set_process():
     def checkExist(self):
         jsonFile = json.load(open('converted_stickers.json'))
         if self.ID in jsonFile:
-            self.tg_sticker_link = jsonFile[self.ID]+'\nhttps://t.me/addstickers/id_'+str(self.ID)+'_by_TLStT_bot'
+            self.tg_sticker_link = jsonFile[self.ID]+'\nhttps://t.me/addstickers/id'+str(self.ID)+'_by_TLStT_bot'
             self.context.bot.send_message(
                 chat_id=self.updater.effective_chat.id, 
                 text=self.tg_sticker_link,)
