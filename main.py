@@ -35,7 +35,7 @@ class bot():
                 Sticker_set.record_converted_stickers()
         else:
             context.bot.send_message(
-                chat_id = updater.effective_chat.id, 
+                chat_id = updater.effective_chat.id,
                 text = 'Wrong input content!\nPlease give me the sticker\'s store link.\nExample: https://store.line.me/stickershop/product/00001/zh-Hant')
 
 
@@ -106,26 +106,26 @@ class sticker_set_process():
                 amount+=1
                 try:
                     self.context.bot.addStickerToSet(
-                        self.updater.message.from_user.id, 
-                        self.tg_sticker_set_name, 
-                        default_emj, 
-                        open(''+png_sticker, 'rb'))
+                        user_id=self.updater.message.from_user.id,
+                        name=self.tg_sticker_set_name,
+                        emojis=default_emj,
+                        png_sticker=open(''+png_sticker, 'rb'))
                 except telegram.error.BadRequest:
                     self.context.bot.createNewStickerSet(
-                        self.updater.message.from_user.id, 
-                        self.tg_sticker_set_name, 
-                        self.eng_name, 
-                        default_emj, 
-                        open(''+png_sticker, 'rb'))
+                        user_id=self.updater.message.from_user.id,
+                        name=self.tg_sticker_set_name,
+                        title=self.eng_name,
+                        emojis=default_emj,
+                        png_sticker=open(''+png_sticker, 'rb'))
                 os.remove(png_sticker)
                 print('upload '+self.tg_sticker_set_name+' success. ', amount)
         shutil.rmtree('Stickers')
         os.remove('Stickers.zip')
         print('finish!\nhttps://t.me/addstickers/{}'.format(self.tg_sticker_set_name))
         self.context.bot.send_message(
-            chat_id=self.updater.effective_chat.id, 
+            chat_id=self.updater.effective_chat.id,
             text='{}\nhttps://t.me/addstickers/{}'.format(self.tw_name, self.tg_sticker_set_name))
-    
+
     def record_converted_stickers(self):
         jsonFile = open('converted_stickers.json', 'r')
         data = json.loads(jsonFile.read())
@@ -133,18 +133,18 @@ class sticker_set_process():
         jsonFile = open('converted_stickers.json', 'w')
         json.dump(data, jsonFile)
         jsonFile.close()
-    
+
     def checkExist(self):
         jsonFile = json.load(open('converted_stickers.json'))
         if self.ID in jsonFile:
             self.tg_sticker_link = jsonFile[self.ID]+'\nhttps://t.me/addstickers/{}'.format(self.tg_sticker_set_name)
             self.context.bot.send_message(
-                chat_id=self.updater.effective_chat.id, 
+                chat_id=self.updater.effective_chat.id,
                 text=self.tg_sticker_link,)
             return True
         else:
             return False
-        
+
 
 
 def commands(dispatcher, updater):
